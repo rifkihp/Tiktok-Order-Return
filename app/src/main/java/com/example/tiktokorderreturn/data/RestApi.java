@@ -1,8 +1,8 @@
-package com.example.qrcode_videopacking.data;
+package com.example.tiktokorderreturn.data;
 
-import com.example.qrcode_videopacking.model.ResponseSaveVideoPacking;
-import com.example.qrcode_videopacking.model.ResponseOrderReturn;
-import com.example.qrcode_videopacking.model.ResponseUploadDokumen;
+import com.example.tiktokorderreturn.model.ResponseSaveVideoPacking;
+import com.example.tiktokorderreturn.model.ResponseOrderReturn;
+import com.example.tiktokorderreturn.model.ResponseUploadDokumen;
 
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;

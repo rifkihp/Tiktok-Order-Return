@@ -1,4 +1,4 @@
-package com.example.qrcode_videopacking;
+package com.example.tiktokorderreturn;
 
 import android.annotation.SuppressLint;
 import android.content.ClipData;

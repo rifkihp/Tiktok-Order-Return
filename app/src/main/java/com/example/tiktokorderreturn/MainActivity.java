@@ -1,35 +1,13 @@
-package com.example.qrcode_videopacking;
+package com.example.tiktokorderreturn;
 
-import android.Manifest;
 import android.app.AlertDialog;
-import android.content.ContentValues;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.MediaPlayer;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.CountDownTimer;
-import android.provider.MediaStore;
-import android.util.Log;
 import android.view.MenuItem;
-import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.Camera;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.Preview;
-import androidx.camera.lifecycle.ProcessCameraProvider;
-import androidx.camera.video.MediaStoreOutputOptions;
-import androidx.camera.video.Quality;
-import androidx.camera.video.QualitySelector;
-import androidx.camera.video.Recorder;
-import androidx.camera.video.Recording;
-import androidx.camera.video.VideoCapture;
-import androidx.camera.video.VideoRecordEvent;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -38,13 +16,6 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
-import com.google.common.util.concurrent.ListenableFuture;
-
-import java.text.SimpleDateFormat;
-import java.util.Locale;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -69,12 +40,8 @@ public class MainActivity extends AppCompatActivity {
                     replaceFragment(new QrCreateFragment());
 
                 } else if (id == R.id.itemScan) {
-                    //Intent intent = new Intent(getApplicationContext(), CaptureActivity.class);
-                    //intent.putExtra("URL_TEXT", "JX123455444");
-                    //startActivity(intent);
-
                     bottomNavigationView.getMenu().findItem(R.id.itemScan).setChecked(true);
-                    replaceFragment(new VideoCaptureFragment());
+                    replaceFragment(new QrScanFragment());
 
                 } else if (id == R.id.itemSettings) {
                     bottomNavigationView.getMenu().findItem(R.id.itemSettings).setChecked(true);
@@ -97,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigationView.getMenu().findItem(R.id.itemScan).setChecked(true);
 
         // QrScanFragmentを再読み込み (再スキャンのため）
-        replaceFragment(new VideoCaptureFragment());
+        replaceFragment(new QrScanFragment());
     }
 
     @Override   // バックグラウンドになったとき

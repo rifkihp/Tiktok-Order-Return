@@ -1,4 +1,4 @@
-package com.example.qrcode_videopacking;
+package com.example.tiktokorderreturn;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -115,11 +115,12 @@ public class QrScanFragment extends Fragment {
             @Override
             public void barcodeResult(BarcodeResult barcodeResult) {
                 // QrReadActivityに値を送る
-                //Intent intent = new Intent(getActivity().getApplicationContext(), CaptureActivity.class);
-                //intent.putExtra("URL_TEXT", barcodeResult.getText());
-                //startActivity(intent);
 
-                replaceFragment(new VideoCaptureFragment());
+
+
+                Intent intent = new Intent(getActivity().getApplicationContext(), QrReadActivity.class);
+                intent.putExtra("URL_TEXT", barcodeResult.getText());
+                startActivity(intent);
             }
 
             @Override

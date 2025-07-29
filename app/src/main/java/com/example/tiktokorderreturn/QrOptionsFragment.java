@@ -1,4 +1,4 @@
-package com.example.qrcode_videopacking;
+package com.example.tiktokorderreturn;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;

@@ -5,11 +5,11 @@
     }
 
 android {
-    namespace = "com.example.qrcode_videopacking"
+    namespace = "com.example.tiktokorderreturn"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.qrcode_reader"
+        applicationId = "com.example.tiktokorderreturn"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

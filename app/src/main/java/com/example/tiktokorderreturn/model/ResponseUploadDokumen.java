@@ -1,4 +1,4 @@
-package com.example.qrcode_videopacking.model;
+package com.example.tiktokorderreturn.model;
 import com.google.gson.annotations.SerializedName;
 
 public class ResponseUploadDokumen {

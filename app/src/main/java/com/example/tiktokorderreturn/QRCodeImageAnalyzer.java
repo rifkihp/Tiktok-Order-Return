@@ -1,4 +1,4 @@
-package com.example.qrcode_videopacking;
+package com.example.tiktokorderreturn;
 
 import static android.graphics.ImageFormat.YUV_420_888;
 import static android.graphics.ImageFormat.YUV_422_888;

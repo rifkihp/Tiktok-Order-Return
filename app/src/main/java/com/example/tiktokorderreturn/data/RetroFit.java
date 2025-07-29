@@ -1,7 +1,7 @@
-package com.example.qrcode_videopacking.data;
+package com.example.tiktokorderreturn.data;
 
 
-import com.example.qrcode_videopacking.libs.CommonUtilities;
+import com.example.tiktokorderreturn.libs.CommonUtilities;
 
 import java.security.cert.CertificateException;
 

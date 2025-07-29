@@ -1,4 +1,4 @@
-package com.example.qrcode_videopacking;
+package com.example.tiktokorderreturn;
 
 import android.Manifest;
 import android.app.Dialog;
@@ -39,10 +39,9 @@ import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.example.qrcode_videopacking.data.RestApi;
-import com.example.qrcode_videopacking.data.RetroFit;
-import com.example.qrcode_videopacking.model.ResponseOrderReturn;
-import com.example.qrcode_videopacking.model.ResponseSaveVideoPacking;
+import com.example.tiktokorderreturn.data.RestApi;
+import com.example.tiktokorderreturn.data.RetroFit;
+import com.example.tiktokorderreturn.model.ResponseSaveVideoPacking;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.text.SimpleDateFormat;

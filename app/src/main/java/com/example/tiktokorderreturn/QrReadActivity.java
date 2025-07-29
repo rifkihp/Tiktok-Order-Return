@@ -1,4 +1,4 @@
-package com.example.qrcode_videopacking;
+package com.example.tiktokorderreturn;
 
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -17,9 +17,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.qrcode_videopacking.data.RestApi;
-import com.example.qrcode_videopacking.data.RetroFit;
-import com.example.qrcode_videopacking.model.ResponseOrderReturn;
+import com.example.tiktokorderreturn.data.RestApi;
+import com.example.tiktokorderreturn.data.RetroFit;
+import com.example.tiktokorderreturn.model.ResponseOrderReturn;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
@@ -66,7 +66,6 @@ public class QrReadActivity extends AppCompatActivity {
                 throw new RuntimeException(e);
             }
 
-
             // ■ 処理: ボタン QR画像保存
             ImageButton saveImageButton = findViewById(R.id.saveImageButton);
             saveImageButton.setOnClickListener(new View.OnClickListener() {
@@ -83,8 +82,6 @@ public class QrReadActivity extends AppCompatActivity {
                             if(success) {
                                 String message = Objects.requireNonNull(response.body()).getMessage();
                                 Toast.makeText(QrReadActivity.this,message,Toast.LENGTH_SHORT).show();
-
-
                             }
                         }
                         @Override

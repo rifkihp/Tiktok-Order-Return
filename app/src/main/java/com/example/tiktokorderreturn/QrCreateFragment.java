@@ -1,9 +1,11 @@
 package com.example.tiktokorderreturn;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -19,8 +21,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
+import com.example.tiktokorderreturn.data.RestApi;
+import com.example.tiktokorderreturn.data.RetroFit;
+import com.example.tiktokorderreturn.model.ResponseCheckOrderReturn;
+import com.example.tiktokorderreturn.model.ResponseOrderReturn;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
@@ -30,6 +37,11 @@ import com.journeyapps.barcodescanner.BarcodeEncoder;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Objects;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 
 public class QrCreateFragment extends Fragment {
@@ -37,6 +49,7 @@ public class QrCreateFragment extends Fragment {
     View view;
     ImageView qrImageView_qfc;
     TextView urlTextView_qfc;
+    LoadingDialogFragment loadingDialog;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -47,6 +60,8 @@ public class QrCreateFragment extends Fragment {
         // ■ ボタン処理: URLからQRコード生成
         qrImageView_qfc = view.findViewById(R.id.qrImageView_qcf);
         urlTextView_qfc = view.findViewById(R.id.urlEditText_qcf);
+        //urlTextView_qfc.setText("JX5428230056");
+
         Button createButton_qcf = view.findViewById(R.id.createButton_qcf);
         createButton_qcf.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -63,6 +78,30 @@ public class QrCreateFragment extends Fragment {
                         Bitmap bitmapCreate = barcodeEncoder.createBitmap(bitMatrix);
 
                         qrImageView_qfc.setImageBitmap(bitmapCreate);
+                        showLoadingDialog();
+                        RestApi api = RetroFit.getInstanceRetrofit();
+                        Call<ResponseCheckOrderReturn> splashCall = api.checkOrderReturn(urlTextView_qfc.getText().toString());
+                        splashCall.enqueue(new Callback<ResponseCheckOrderReturn>() {
+                            @Override
+                            public void onResponse(@NonNull Call<ResponseCheckOrderReturn> call, @NonNull Response<ResponseCheckOrderReturn> response) {
+                                boolean success = Objects.requireNonNull(response.body()).getSuccess();
+                                dismissLoadingDialog();
+                                if(success) {
+                                    String orderId = Objects.requireNonNull(response.body()).getOrderId();
+                                    Intent intent = new Intent(getActivity().getApplicationContext(), QrReadActivity.class);
+                                    intent.putExtra("orderId", orderId);
+                                    startActivity(intent);
+                                } else {
+                                    String message = Objects.requireNonNull(response.body()).getMessage();
+                                    showErrorDialog(message);
+                                }
+                            }
+                            @Override
+                            public void onFailure(@NonNull Call<ResponseCheckOrderReturn> call, @NonNull Throwable t) {
+                                dismissLoadingDialog();
+                                showErrorDialog("PROSES GAGAL, COBA LAGI!");
+                            }
+                        });
 
                         // 例外処理
                     }catch(WriterException e){
@@ -77,7 +116,7 @@ public class QrCreateFragment extends Fragment {
         });
 
         // ■ ボタン処理: QR画像保存
-        ImageButton saveImageButton_qcf = view.findViewById(R.id.saveImageButton_qcf);
+        /*ImageButton saveImageButton_qcf = view.findViewById(R.id.saveImageButton_qcf);
         saveImageButton_qcf.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -124,10 +163,10 @@ public class QrCreateFragment extends Fragment {
                     Toast.makeText(getActivity(),"画像が存在しません。",Toast.LENGTH_SHORT).show();
                 }
             }
-        });
+        });*/
 
         // ■ ボタン処理: テキストコピー
-        ImageButton copyImageButton_qcf = view.findViewById(R.id.copyImageButton_qcf);
+        /*ImageButton copyImageButton_qcf = view.findViewById(R.id.copyImageButton_qcf);
         copyImageButton_qcf.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -150,10 +189,9 @@ public class QrCreateFragment extends Fragment {
                     Toast.makeText(getActivity(),"テキストを入力してください。",Toast.LENGTH_SHORT).show();
                 }
             }
-        });
+        });*/
 
-        // ■ 処理: ボタン URLを開く
-        ImageButton openImageBtn_qcf = view.findViewById(R.id.openImageButton_qcf);
+        /*ImageButton openImageBtn_qcf = view.findViewById(R.id.openImageButton_qcf);
         openImageBtn_qcf.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -166,8 +204,29 @@ public class QrCreateFragment extends Fragment {
                     Toast.makeText(getActivity(), "URLの認識に失敗しました。", Toast.LENGTH_SHORT).show();
                 }
             }
-        });
+        });*/
 
-        return view;    // onCreateView最終
+        return view;
+    }
+
+    public void showLoadingDialog() {
+        if (loadingDialog == null) {
+            loadingDialog = new LoadingDialogFragment();
+        }
+        // Use getChildFragmentManager() if the dialog should be managed within this Fragment's lifecycle
+        // Use getParentFragmentManager() if the dialog should be managed by the parent Activity
+        loadingDialog.show(getChildFragmentManager(), "loading_dialog_tag");
+    }
+
+    public void dismissLoadingDialog() {
+        if (loadingDialog != null) {
+            loadingDialog.dismiss();
+            loadingDialog = null; // Clear the reference after dismissal
+        }
+    }
+
+    private void showErrorDialog(String errorMessage) {
+        ErrorMessageDialogFragment.newInstance(errorMessage)
+                .show(getChildFragmentManager(), "ErrorMessageDialog");
     }
 }

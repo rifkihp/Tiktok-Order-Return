@@ -1,31 +1,37 @@
 package com.example.tiktokorderreturn;
 
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.tiktokorderreturn.adapter.ItemListAdapter;
 import com.example.tiktokorderreturn.data.RestApi;
 import com.example.tiktokorderreturn.data.RetroFit;
+import com.example.tiktokorderreturn.model.ResponseDetailOrder;
 import com.example.tiktokorderreturn.model.ResponseOrderReturn;
+import com.example.tiktokorderreturn.model.data;
+import com.example.tiktokorderreturn.model.itemListOrder;
+import com.example.tiktokorderreturn.model.orders;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 import retrofit2.Call;
@@ -36,35 +42,76 @@ public class QrReadActivity extends AppCompatActivity {
 
     private ImageView qrImageView;
     private TextView urlTextView;
-
+    private ListView lvItemList;
+    private ArrayList<itemListOrder> listItem = new ArrayList<>();
+    private ItemListAdapter listItemAdapter;
+    private String order_id;
+    private String item_list;
+    private LoadingDialogFragment loadingDialog;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_qr_read);
 
-        // ■ 処理: QRコード読込で取得したURLデータを読込み
         urlTextView = findViewById(R.id.urlTextView);
+        lvItemList  = findViewById(R.id.lv);
+
         Intent intent = getIntent();
         if(intent != null) {
-            String str = intent.getStringExtra("URL_TEXT");
-            urlTextView.setText(str);
+            order_id =  intent.getStringExtra("orderId");
+            urlTextView.setText(order_id);
 
+            qrImageView = findViewById(R.id.qrImageView);
+            MultiFormatWriter multiFormatWriter = new MultiFormatWriter();
 
-        // ■ 処理: QRコード生成
-        qrImageView = findViewById(R.id.qrImageView);
-        MultiFormatWriter multiFormatWriter = new MultiFormatWriter();
+            try {
+                BitMatrix bitMatrix = multiFormatWriter.encode(order_id, BarcodeFormat.QR_CODE,300,300);
+                BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
+                Bitmap bitmapCreate = barcodeEncoder.createBitmap(bitMatrix);
 
-        try {
+                qrImageView.setImageBitmap(bitmapCreate);
 
-            BitMatrix bitMatrix = multiFormatWriter.encode(urlTextView.getText().toString(), BarcodeFormat.QR_CODE,300,300);
-            BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
-            Bitmap bitmapCreate = barcodeEncoder.createBitmap(bitMatrix);
-
-            qrImageView.setImageBitmap(bitmapCreate);
-
-            }catch(WriterException e){
+            } catch(WriterException e){
                 throw new RuntimeException(e);
             }
+
+            showLoadingDialog();
+            RestApi api = RetroFit.getInstanceRetrofit();
+            Call<ResponseDetailOrder> splashCall = api.getDetailOrder(order_id);
+            splashCall.enqueue(new Callback<ResponseDetailOrder>() {
+                @Override
+                public void onResponse(@NonNull Call<ResponseDetailOrder> call, @NonNull Response<ResponseDetailOrder> response) {
+
+                    int code = Objects.requireNonNull(response.body()).getCode();
+                    String message = Objects.requireNonNull(response.body()).getMessage();
+                    String requestId = Objects.requireNonNull(response.body()).getRequest_id();
+                    data datas = Objects.requireNonNull(response.body()).getData();
+                    Log.e("ENTARO", code + " | " + message+ " | " + requestId);
+
+
+                    ArrayList<orders> listorders = datas.getOrders();
+                    listItem = new ArrayList<>();
+
+                    item_list = "";
+                    for (orders order: listorders) {
+                        ArrayList<itemListOrder> itemList = order.getItemList();
+                        for(itemListOrder item: itemList) {
+                            listItem.add(item);
+                            item_list += (item_list.length() > 0 ? ";" : "") + item.getProduct_id() + "," + item.getSku_id();
+                        }
+                    }
+
+                    listItemAdapter = new ItemListAdapter(QrReadActivity.this, listItem);
+                    lvItemList.setAdapter(listItemAdapter);
+
+                    dismissLoadingDialog();
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<ResponseDetailOrder> call, @NonNull Throwable t) {
+                    showErrorDialogDataNotFound("Error", "Data Tidak ditemukan.");
+                }
+            });
 
             // ■ 処理: ボタン QR画像保存
             ImageButton saveImageButton = findViewById(R.id.saveImageButton);
@@ -72,96 +119,11 @@ public class QrReadActivity extends AppCompatActivity {
 
                 @Override
                 public void onClick(View v) {
-
-                    RestApi api = RetroFit.getInstanceRetrofit();
-                    Call<ResponseOrderReturn> splashCall = api.updateReturn(urlTextView.getText().toString());
-                    splashCall.enqueue(new Callback<ResponseOrderReturn>() {
-                        @Override
-                        public void onResponse(@NonNull Call<ResponseOrderReturn> call, @NonNull Response<ResponseOrderReturn> response) {
-                            boolean success = Objects.requireNonNull(response.body()).getSuccess();
-                            if(success) {
-                                String message = Objects.requireNonNull(response.body()).getMessage();
-                                Toast.makeText(QrReadActivity.this,message,Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                        @Override
-                        public void onFailure(@NonNull Call<ResponseOrderReturn> call, @NonNull Throwable t) {
-
-                            Toast.makeText(QrReadActivity.this,"GAGAL SIMPAN DATA!",Toast.LENGTH_SHORT).show();
-                        }
-                    });
-
-                    /*BitmapDrawable bitmapDrawable = (BitmapDrawable) qrImageView.getDrawable();
-                    Bitmap bitmapSave = bitmapDrawable.getBitmap();
-
-                    FileOutputStream fileOutputStream = null;
-                    File sdCard = Environment.getExternalStorageDirectory();
-                    File Directory = new File(sdCard.getAbsolutePath() + "/Download");
-                    Directory.mkdir();
-
-                    String filename = String.format("%d.jpg",System.currentTimeMillis());
-                    File outfile = new File(Directory,filename);
-
-                    try {
-                        fileOutputStream = new FileOutputStream(outfile);
-                        bitmapSave.compress(Bitmap.CompressFormat.JPEG,100,fileOutputStream);
-                        fileOutputStream.flush();
-                        fileOutputStream.close();
-
-                        Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                        intent.setData(Uri.fromFile(outfile));
-                        sendBroadcast(intent);
-
-                        Toast.makeText(QrReadActivity.this,"画像を保存しました。",Toast.LENGTH_SHORT).show();
-
-                    } catch(IOException e){
-                        e.printStackTrace();
-                        Toast.makeText(QrReadActivity.this,"画像を保存に失敗しました。",Toast.LENGTH_SHORT).show();
-                    }*/
-
+                    showConfirmationDialog();
 
                 }
             });
         }
-
-        // ■ 処理: ボタン テキストコピー
-        ImageButton copyImageButton = findViewById(R.id.copyImageButton);
-        copyImageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                ClipboardManager clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText("GET_TEXT", urlTextView.getText().toString());
-                if(clipboardManager == null) {
-                    Toast.makeText(QrReadActivity.this,"テキストのコピーに失敗しました。",Toast.LENGTH_SHORT).show();
-                }else{
-                    clipboardManager.setPrimaryClip(clip);
-                    clip.getDescription();
-
-                    Toast.makeText(QrReadActivity.this,"テキストをコピーしました。",Toast.LENGTH_SHORT).show();
-                }
-
-
-            }
-        });
-
-
-        // ■ 処理: ボタン URLを開く
-        ImageButton openImageButton = findViewById(R.id.openImageButton);
-        openImageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                try {
-                    Uri uri = Uri.parse(urlTextView.getText().toString());
-                    Intent iUrl = new Intent(Intent.ACTION_VIEW,uri);
-                    startActivity(iUrl);
-                }catch(Exception e){
-                    Toast.makeText(QrReadActivity.this,"ブラウザの起動に失敗しました。",Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-
 
         // ■ 処理: 戻るボタン
         Button backButton = findViewById(R.id.backButton);
@@ -172,6 +134,119 @@ public class QrReadActivity extends AppCompatActivity {
             }
         });
 
-    }   // onCreate最終
+    }
+
+    private void showSuccessDialog(String message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Berhasil"); // Set the dialog title
+        builder.setMessage(message); // Set the dialog message
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked OK button
+                dialog.dismiss(); // Close the dialog
+                finish();
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void showWarningDialog(String message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Peringatan"); // Set the dialog title
+        builder.setMessage(message); // Set the dialog message
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked OK button
+                dialog.dismiss(); // Close the dialog
+                finish();
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void showErrorDialogDataNotFound(String title, String message) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle(title)
+                    .setMessage(message)
+                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            // User clicked OK button
+                            dialog.dismiss(); // Dismiss the dialog
+                            finish();
+                        }
+                    });
+            AlertDialog dialog = builder.create();
+            dialog.show();
+
+    }
+    private void showErrorDialog(String errorMessage) {
+        ErrorMessageDialogFragment.newInstance(errorMessage)
+                .show(getSupportFragmentManager(), "ErrorMessageDialog");
+    }
+
+    public void showLoadingDialog() {
+        loadingDialog = new LoadingDialogFragment();
+        loadingDialog.show(getSupportFragmentManager(), "LoadingDialogTag");
+    }
+
+    public void dismissLoadingDialog() {
+        if (loadingDialog != null && loadingDialog.isAdded()) {
+            loadingDialog.dismiss();
+            loadingDialog = null; // Clear the reference
+        }
+    }
+
+    private void showConfirmationDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Save Confirmation");
+        builder.setMessage("Are you sure you want to save?");
+
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                showLoadingDialog();
+                RestApi api = RetroFit.getInstanceRetrofit();
+                Call<ResponseOrderReturn> splashCall = api.updateReturn(order_id, item_list);
+                splashCall.enqueue(new Callback<ResponseOrderReturn>() {
+                    @Override
+                    public void onResponse(@NonNull Call<ResponseOrderReturn> call, @NonNull Response<ResponseOrderReturn> response) {
+                        dismissLoadingDialog();
+
+                        boolean success = Objects.requireNonNull(response.body()).getSuccess();
+                        String message = Objects.requireNonNull(response.body()).getMessage();
+                        if(success) {
+                            boolean isReturnUpdateStok = Objects.requireNonNull(response.body()).getIsReturnUpdateStok();
+                            if(isReturnUpdateStok) {
+                                showSuccessDialog(message);
+                            } else {
+                                showWarningDialog(message);
+                            }
+                        } else {
+                            showErrorDialog(message);
+                        }
+                    }
+                    @Override
+                    public void onFailure(@NonNull Call<ResponseOrderReturn> call, @NonNull Throwable t) {
+                        showErrorDialog("Proses simpan data gagal. Coba Lagi!");
+                    }
+                });
+            }
+        });
+
+        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // User cancelled exit
+                dialog.dismiss(); // Dismiss the dialog
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
 
 }

@@ -1,7 +1,11 @@
 package com.example.tiktokorderreturn;
 
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,10 +13,15 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
+import com.example.tiktokorderreturn.data.RestApi;
+import com.example.tiktokorderreturn.data.RetroFit;
+import com.example.tiktokorderreturn.model.ResponseCheckOrderReturn;
+import com.example.tiktokorderreturn.model.ResponseOrderReturn;
 import com.google.zxing.ResultPoint;
 import com.journeyapps.barcodescanner.BarcodeCallback;
 import com.journeyapps.barcodescanner.BarcodeResult;
@@ -20,6 +29,11 @@ import com.journeyapps.barcodescanner.CompoundBarcodeView;
 import com.journeyapps.barcodescanner.camera.CameraSettings;
 
 import java.util.List;
+import java.util.Objects;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class QrScanFragment extends Fragment {
 
@@ -32,20 +46,21 @@ public class QrScanFragment extends Fragment {
     private boolean flashOn = false;
 
     private static int  frontCameraState = 0;
+    LoadingDialogFragment loadingDialog;
+
+    MediaPlayer mp_start;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        // ■ 必須: MainActivityに呼ばれたとき表示
         view = inflater.inflate(R.layout.fragment_qr_scan, container, false);
-
-        // ■ QRコードリーダー設定＆起動
+        mp_start = MediaPlayer.create(getActivity(), R.raw.start);
         barcodeViewSetting();
         barcodeViewStart();
 
 
-        // ■ 設定: FlashLight
+        // FlashLight
         hasCameraFlash = getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
         ImageButton flashImageButton = view.findViewById(R.id.flashImageButton);
         flashImageButton.setOnClickListener(new View.OnClickListener() {
@@ -67,7 +82,7 @@ public class QrScanFragment extends Fragment {
             }
         });
 
-        // ■ 設定: FrontCamera
+        // FrontCamera
         ImageButton changeImageButton = view.findViewById(R.id.changeImageButton);
         changeImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -82,7 +97,7 @@ public class QrScanFragment extends Fragment {
             }
         });
 
-        return view;    // onCreateView末尾
+        return view;
     }
 
     @Override
@@ -97,7 +112,6 @@ public class QrScanFragment extends Fragment {
         compoundBarcodeView.resume();
     }
 
-    // ■ 設定メソッド: QRコードリーダーを初期化し、起動
     private void barcodeViewSetting() {
 
         compoundBarcodeView = (CompoundBarcodeView) view.findViewById(R.id.compaundBarcodeView);
@@ -109,18 +123,35 @@ public class QrScanFragment extends Fragment {
         System.out.println(frontCameraState);
     }
 
-    // ■ 実行メソッド: バーコードで読み取ったデータの処理
     public void barcodeViewStart() {
         compoundBarcodeView.decodeSingle(new BarcodeCallback() {
             @Override
             public void barcodeResult(BarcodeResult barcodeResult) {
-                // QrReadActivityに値を送る
-
-
-
-                Intent intent = new Intent(getActivity().getApplicationContext(), QrReadActivity.class);
-                intent.putExtra("URL_TEXT", barcodeResult.getText());
-                startActivity(intent);
+                mp_start.start();
+                showLoadingDialog();
+                RestApi api = RetroFit.getInstanceRetrofit();
+                Call<ResponseCheckOrderReturn> splashCall = api.checkOrderReturn(barcodeResult.getText());
+                splashCall.enqueue(new Callback<ResponseCheckOrderReturn>() {
+                    @Override
+                    public void onResponse(@NonNull Call<ResponseCheckOrderReturn> call, @NonNull Response<ResponseCheckOrderReturn> response) {
+                        boolean success = Objects.requireNonNull(response.body()).getSuccess();
+                        dismissLoadingDialog();
+                        if(success) {
+                            String orderId = Objects.requireNonNull(response.body()).getOrderId();
+                            Intent intent = new Intent(getActivity().getApplicationContext(), QrReadActivity.class);
+                            intent.putExtra("orderId", orderId);
+                            startActivity(intent);
+                        } else {
+                            String message = Objects.requireNonNull(response.body()).getMessage();
+                            showErrorDialog(message);
+                        }
+                    }
+                    @Override
+                    public void onFailure(@NonNull Call<ResponseCheckOrderReturn> call, @NonNull Throwable t) {
+                        dismissLoadingDialog();
+                        showErrorDialog("PROSES GAGAL, COBA LAGI!");
+                    }
+                });
             }
 
             @Override
@@ -139,6 +170,27 @@ public class QrScanFragment extends Fragment {
         fragmentTransaction.replace(R.id.frameLayout,fragment);
         fragmentTransaction.commit();
 
+    }
+
+    private void showErrorDialog(String errorMessage) {
+        ErrorMessageDialogFragment.newInstance(errorMessage)
+                .show(getChildFragmentManager(), "ErrorMessageDialog");
+    }
+
+    public void showLoadingDialog() {
+        if (loadingDialog == null) {
+            loadingDialog = new LoadingDialogFragment();
+        }
+        // Use getChildFragmentManager() if the dialog should be managed within this Fragment's lifecycle
+        // Use getParentFragmentManager() if the dialog should be managed by the parent Activity
+        loadingDialog.show(getChildFragmentManager(), "loading_dialog_tag");
+    }
+
+    public void dismissLoadingDialog() {
+        if (loadingDialog != null) {
+            loadingDialog.dismiss();
+            loadingDialog = null; // Clear the reference after dismissal
+        }
     }
 }
 

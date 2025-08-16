@@ -1,16 +1,16 @@
 package com.example.tiktokorderreturn.model;
 import com.google.gson.annotations.SerializedName;
 
-public class ResponseOrderReturn {
-
+public class ResponseCheckOrderReturn {
 
     @SerializedName("success")
     private boolean success;
 
     @SerializedName("message")
     private String message;
-    @SerializedName("is_return_update_stok")
-    private boolean is_return_update_stok;
+
+    @SerializedName("order_id")
+    private String orderId;
 
     public boolean getSuccess() {
         return success;
@@ -20,8 +20,8 @@ public class ResponseOrderReturn {
         return message;
     }
 
-    public boolean getIsReturnUpdateStok() {
-        return is_return_update_stok;
+    public String getOrderId() {
+        return orderId;
     }
 
 }

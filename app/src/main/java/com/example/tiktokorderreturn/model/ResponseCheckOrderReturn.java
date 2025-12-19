@@ -12,6 +12,12 @@ public class ResponseCheckOrderReturn {
     @SerializedName("order_id")
     private String orderId;
 
+    @SerializedName("tracking_number")
+    private String tracking_number;
+
+    @SerializedName("platform")
+    private String platform;
+
     public boolean getSuccess() {
         return success;
     }
@@ -22,6 +28,14 @@ public class ResponseCheckOrderReturn {
 
     public String getOrderId() {
         return orderId;
+    }
+
+    public String getTracking_number() {
+        return tracking_number;
+    }
+
+    public String getPlatform() {
+        return platform;
     }
 
 }

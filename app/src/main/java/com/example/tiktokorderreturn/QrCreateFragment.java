@@ -87,9 +87,14 @@ public class QrCreateFragment extends Fragment {
                                 boolean success = Objects.requireNonNull(response.body()).getSuccess();
                                 dismissLoadingDialog();
                                 if(success) {
-                                    String orderId = Objects.requireNonNull(response.body()).getOrderId();
+                                    String orderId         = Objects.requireNonNull(response.body()).getOrderId();
+                                    String tracking_number = Objects.requireNonNull(response.body()).getTracking_number();
+                                    String platform        = Objects.requireNonNull(response.body()).getPlatform();
+
                                     Intent intent = new Intent(getActivity().getApplicationContext(), QrReadActivity.class);
                                     intent.putExtra("orderId", orderId);
+                                    intent.putExtra("tracking_number", tracking_number);
+                                    intent.putExtra("platform", platform);
                                     startActivity(intent);
                                 } else {
                                     String message = Objects.requireNonNull(response.body()).getMessage();

@@ -40,12 +40,13 @@ import retrofit2.Response;
 
 public class QrReadActivity extends AppCompatActivity {
 
-    private ImageView qrImageView;
     private TextView urlTextView;
     private ListView lvItemList;
     private ArrayList<itemListOrder> listItem = new ArrayList<>();
     private ItemListAdapter listItemAdapter;
     private String order_id;
+    private String tracking_number;
+    private String platform;
     private String item_list;
     private LoadingDialogFragment loadingDialog;
     @Override
@@ -59,26 +60,14 @@ public class QrReadActivity extends AppCompatActivity {
         Intent intent = getIntent();
         if(intent != null) {
             order_id =  intent.getStringExtra("orderId");
+            tracking_number = intent.getStringExtra("tracking_number");
+            platform =  intent.getStringExtra("platform");
             urlTextView.setText(order_id);
-
-            qrImageView = findViewById(R.id.qrImageView);
-            MultiFormatWriter multiFormatWriter = new MultiFormatWriter();
-
-            try {
-                BitMatrix bitMatrix = multiFormatWriter.encode(order_id, BarcodeFormat.QR_CODE,300,300);
-                BarcodeEncoder barcodeEncoder = new BarcodeEncoder();
-                Bitmap bitmapCreate = barcodeEncoder.createBitmap(bitMatrix);
-
-                qrImageView.setImageBitmap(bitmapCreate);
-
-            } catch(WriterException e){
-                throw new RuntimeException(e);
-            }
 
             showLoadingDialog();
             RestApi api = RetroFit.getInstanceRetrofit();
-            Call<ResponseDetailOrder> splashCall = api.getDetailOrder(order_id);
-            splashCall.enqueue(new Callback<ResponseDetailOrder>() {
+            Call<ResponseDetailOrder> splashCall = api.getDetailOrder(order_id, tracking_number, platform);
+            splashCall.enqueue(new Callback<>() {
                 @Override
                 public void onResponse(@NonNull Call<ResponseDetailOrder> call, @NonNull Response<ResponseDetailOrder> response) {
 
@@ -87,7 +76,6 @@ public class QrReadActivity extends AppCompatActivity {
                     String requestId = Objects.requireNonNull(response.body()).getRequest_id();
                     data datas = Objects.requireNonNull(response.body()).getData();
                     Log.e("ENTARO", code + " | " + message+ " | " + requestId);
-
 
                     ArrayList<orders> listorders = datas.getOrders();
                     listItem = new ArrayList<>();
@@ -210,7 +198,7 @@ public class QrReadActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 showLoadingDialog();
                 RestApi api = RetroFit.getInstanceRetrofit();
-                Call<ResponseOrderReturn> splashCall = api.updateReturn(order_id, item_list);
+                Call<ResponseOrderReturn> splashCall = api.updateReturn(order_id, item_list, platform);
                 splashCall.enqueue(new Callback<ResponseOrderReturn>() {
                     @Override
                     public void onResponse(@NonNull Call<ResponseOrderReturn> call, @NonNull Response<ResponseOrderReturn> response) {

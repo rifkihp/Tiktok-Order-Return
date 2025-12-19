@@ -48,6 +48,7 @@ public class QrScanFragment extends Fragment {
     private static int  frontCameraState = 0;
     LoadingDialogFragment loadingDialog;
 
+
     MediaPlayer mp_start;
 
     @Override
@@ -58,7 +59,6 @@ public class QrScanFragment extends Fragment {
         mp_start = MediaPlayer.create(getActivity(), R.raw.start);
         barcodeViewSetting();
         barcodeViewStart();
-
 
         // FlashLight
         hasCameraFlash = getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
@@ -130,17 +130,24 @@ public class QrScanFragment extends Fragment {
                 mp_start.start();
                 showLoadingDialog();
                 RestApi api = RetroFit.getInstanceRetrofit();
-                Call<ResponseCheckOrderReturn> splashCall = api.checkOrderReturn(barcodeResult.getText());
-                splashCall.enqueue(new Callback<ResponseCheckOrderReturn>() {
+                Call<ResponseCheckOrderReturn> checkPesanan = api.checkOrderReturn(barcodeResult.getText());
+                checkPesanan.enqueue(new Callback<>() {
                     @Override
                     public void onResponse(@NonNull Call<ResponseCheckOrderReturn> call, @NonNull Response<ResponseCheckOrderReturn> response) {
                         boolean success = Objects.requireNonNull(response.body()).getSuccess();
                         dismissLoadingDialog();
                         if(success) {
-                            String orderId = Objects.requireNonNull(response.body()).getOrderId();
+
+                            String orderId         = Objects.requireNonNull(response.body()).getOrderId();
+                            String tracking_number = Objects.requireNonNull(response.body()).getTracking_number();
+                            String platform        = Objects.requireNonNull(response.body()).getPlatform();
+
                             Intent intent = new Intent(getActivity().getApplicationContext(), QrReadActivity.class);
                             intent.putExtra("orderId", orderId);
+                            intent.putExtra("tracking_number", tracking_number);
+                            intent.putExtra("platform", platform);
                             startActivity(intent);
+
                         } else {
                             String message = Objects.requireNonNull(response.body()).getMessage();
                             showErrorDialog(message);
@@ -173,8 +180,22 @@ public class QrScanFragment extends Fragment {
     }
 
     private void showErrorDialog(String errorMessage) {
-        ErrorMessageDialogFragment.newInstance(errorMessage)
-                .show(getChildFragmentManager(), "ErrorMessageDialog");
+        //barcodeViewStart();
+        //ErrorMessageDialogFragment.newInstance(errorMessage)
+        //        .show(getChildFragmentManager(), "ErrorMessageDialog");
+        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
+        alertDialogBuilder.setTitle("Error");
+        alertDialogBuilder.setMessage(errorMessage);
+        alertDialogBuilder.setPositiveButton("OK",  new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                // on success
+                dialog.dismiss();
+                barcodeViewStart();
+            }
+        });
+
+        alertDialogBuilder.show();
     }
 
     public void showLoadingDialog() {

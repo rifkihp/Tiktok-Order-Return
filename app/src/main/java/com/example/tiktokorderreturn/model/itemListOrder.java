@@ -24,6 +24,8 @@ public class itemListOrder implements Serializable {
     @SerializedName("sku_name")
     String sku_name;
 
+    //@SerializedName("qty")
+    //int qty;
 
     public String getId() {
         return this.id;
@@ -44,5 +46,9 @@ public class itemListOrder implements Serializable {
     public String getSku_name() {
         return this.sku_name;
     }
+
+    //public int getQty() {
+    //    return this.qty;
+    //}
 
 }

@@ -24,35 +24,19 @@ public interface RestApi {
             @Query("tracking_number") String tracking_number
     );
 
-    @GET("order/orderDetail")
+    @GET("order/getOrderReturn")
     Call<ResponseDetailOrder> getDetailOrder(
-            @Query("ids") String order_id
+            @Query("ids") String order_id,
+            @Query("tracking_number") String tracking_number,
+            @Query("platform") String order_platform
     );
 
     @FormUrlEncoded
     @POST("order/setOrderReturn")
     Call<ResponseOrderReturn> updateReturn(
             @Field("orderId") String order_id,
-            @Field("itemList") String item_list
-    );
-
-    @Multipart
-    @POST("order/updateOrderPacking")
-    Call<ResponseSaveVideoPacking> saveVideoPacking(
-            @Part("tracking_number") RequestBody tracking_number,
-            @Part("video_packing") RequestBody video_packing
-    );
-
-    @Multipart
-    @POST("order/uploadVideoPacking")
-    Call<ResponseUploadDokumen> uploadVideoPacking(
-            @Part MultipartBody.Part ax_file_input,
-            @Part("ax-file-path") RequestBody ax_file_path,
-            @Part("ax-allow-ext") RequestBody ax_allow_ext,
-            @Part("ax-file-name") RequestBody ax_file_name,
-            @Part("ax-max-file-size") RequestBody ax_max_file_size,
-            @Part("ax-start-byte") RequestBody ax_start_byte,
-            @Part("ax-last-chunk") RequestBody ax_last_chunk
+            @Field("itemList") String item_list,
+            @Field("platform") String platform
     );
 
 
